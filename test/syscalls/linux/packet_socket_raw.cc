@@ -643,6 +643,34 @@ TEST_P(RawPacketTest, GetSocketDetachFilter) {
               SyscallFailsWithErrno(ENOPROTOOPT));
 }
 
+TEST_P(RawPacketTest, SetAndGetSocketLinger) {
+  SKIP_IF(!ASSERT_NO_ERRNO_AND_VALUE(HaveCapability(CAP_NET_RAW)));
+
+  int level = SOL_SOCKET;
+  int type = SO_LINGER;
+
+  struct linger got_linger = {};
+  socklen_t length = sizeof(got_linger);
+  ASSERT_THAT(getsockopt(s_, level, type, &got_linger, &length),
+              SyscallSucceedsWithValue(0));
+  ASSERT_EQ(length, sizeof(got_linger));
+
+  struct linger want_linger = {};
+  EXPECT_EQ(0, memcmp(&want_linger, &got_linger, length));
+
+  struct linger sl;
+  sl.l_onoff = 1;
+  sl.l_linger = 5;
+  ASSERT_THAT(setsockopt(s_, level, type, &sl, sizeof(sl)),
+              SyscallSucceedsWithValue(0));
+
+  ASSERT_THAT(getsockopt(s_, level, type, &got_linger, &length),
+              SyscallSucceedsWithValue(0));
+
+  ASSERT_EQ(length, sizeof(got_linger));
+  EXPECT_EQ(0, memcmp(&sl, &got_linger, length));
+}
+
 INSTANTIATE_TEST_SUITE_P(AllInetTests, RawPacketTest,
                          ::testing::Values(ETH_P_IP, ETH_P_ALL));
 

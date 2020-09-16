@@ -469,15 +469,7 @@ TEST_P(UDPSocketPairTest, SoLingerFail) {
       SyscallSucceedsWithValue(0));
 
   ASSERT_EQ(length, sizeof(got_linger));
-  // Linux returns the values which are set in the SetSockOpt for SO_LINGER.
-  // In gVisor, we do not store the linger values for UDP as SO_LINGER for UDP
-  // is a no-op.
-  if (IsRunningOnGvisor()) {
-    struct linger want_linger = {};
-    EXPECT_EQ(0, memcmp(&want_linger, &got_linger, length));
-  } else {
-    EXPECT_EQ(0, memcmp(&sl, &got_linger, length));
-  }
+  EXPECT_EQ(0, memcmp(&sl, &got_linger, length));
 }
 
 }  // namespace testing
